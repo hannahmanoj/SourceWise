@@ -2,8 +2,16 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SourceWise",
-  description: "AI-guided research discovery for students.",
+  applicationName: "SourceWise",
+  description:
+    "AI-guided research discovery for students who need maps, papers, and debates.",
+  icons: {
+    icon: "/icon.svg",
+  },
+  title: {
+    default: "SourceWise",
+    template: "%s | SourceWise",
+  },
 };
 
 export default function RootLayout({
