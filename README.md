@@ -4,6 +4,20 @@ SourceWise is an AI-guided research discovery app that helps students turn a bro
 
 Built for the **Agents League Hackathon** as a **Reasoning Agents** project using the **Microsoft Foundry IQ** intelligence layer through AI model reasoning.
 
+## Live Demo
+
+SourceWise is deployed at:
+
+```text
+https://source-wise-quvzgf4e8-hannahm.vercel.app
+```
+
+## Demo Video
+
+Watch the demo video:
+
+[SourceWise demo](public/demo/sourcewise.mp4)
+
 ## What It Does
 
 SourceWise helps a student move from:
