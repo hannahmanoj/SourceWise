@@ -16,7 +16,7 @@ https://source-wise-quvzgf4e8-hannahm.vercel.app
 
 Watch the demo video:
 
-[SourceWise demo](public/demo/sourcewise.mp4)
+[SourceWise demo](https://www.youtube.com/watch?v=-WILZ70zfNY)
 
 ## What It Does
 
