@@ -8,9 +8,8 @@ Built for the **Agents League Hackathon** as a **Reasoning Agents** project usin
 
 SourceWise is deployed at:
 
-```text
-https://source-wise-quvzgf4e8-hannahm.vercel.app
-```
+[source-wise](https://source-wise-quvzgf4e8-hannahm.vercel.app)
+
 
 ## Demo Video
 
