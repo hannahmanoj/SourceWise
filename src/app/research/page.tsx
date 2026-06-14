@@ -1,25 +1,41 @@
 import Link from "next/link";
+import { AuthLinks } from "@/components/AuthLinks";
 import { ResearchExperience } from "@/components/ResearchExperience";
+import { getResearchProject } from "@/lib/researchProjects";
+import { createClient } from "@/lib/supabase/server";
 
-export default function ResearchPage() {
+export default async function ResearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ project?: string }>;
+}) {
+  const { project } = await searchParams;
+  const supabase = await createClient();
+  const savedProject = project
+    ? await getResearchProject({ id: project, supabase })
+    : null;
+
   return (
-    <main className="min-h-screen bg-[#f7f5f0] text-[#171717]">
-      <header className="sticky top-0 z-20 border-b border-black/10 bg-[#f7f5f0]/80 px-6 py-4 backdrop-blur-xl sm:px-10">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+    <main className="aura-bg min-h-screen text-[#171717]">
+      <header className="sticky top-0 z-20 border-b border-black/10 bg-[#edf7f5]/80 px-6 py-4 backdrop-blur-xl sm:px-10">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-5">
           <Link className="text-sm font-semibold" href="/">
             SourceWise
           </Link>
-          <div className="flex items-center gap-3 text-sm text-black/55">
-            <span>Topic</span>
-            <span className="h-1 w-1 rounded-full bg-black/25" />
-            <span>Papers</span>
-            <span className="h-1 w-1 rounded-full bg-black/25" />
-            <span>Debates</span>
+          <div className="flex items-center gap-4 text-sm font-semibold text-black/55">
+            <Link className="transition hover:text-black" href="/research">
+              New topic
+            </Link>
+            <AuthLinks />
           </div>
         </div>
       </header>
 
-      <ResearchExperience />
+      <ResearchExperience
+        initialLevel={savedProject?.academicLevel}
+        initialResearchResult={savedProject?.result}
+        initialTopic={savedProject?.topic}
+      />
     </main>
   );
 }

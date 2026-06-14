@@ -6,7 +6,7 @@ export function ResearchInput({ topic }: ResearchInputProps) {
   return (
     <section className="mx-auto max-w-5xl px-6 pb-10 pt-8 sm:px-10">
       <div className="rounded-[8px] border border-black/10 bg-white/75 p-5 shadow-sm backdrop-blur">
-        <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#446b70]">
+        <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#57718f]">
           Step 1
         </p>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -16,7 +16,7 @@ export function ResearchInput({ topic }: ResearchInputProps) {
               {topic}
             </h1>
           </div>
-          <button className="h-11 rounded-full border border-black/10 bg-[#f7f5f0] px-5 text-sm font-medium text-black transition hover:bg-white">
+          <button className="h-11 rounded-full border border-black/10 bg-[#f2f7fb] px-5 text-sm font-medium text-black transition hover:bg-white">
             Change topic
           </button>
         </div>

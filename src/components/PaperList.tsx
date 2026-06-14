@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { mockResearch } from "@/data/mockResearch";
+import type { ResearchPaper } from "@/types/research";
 
-type Paper = (typeof mockResearch.sources)[number];
+type Paper = ResearchPaper;
 
 type PaperListProps = {
   papers: Paper[];
   selectedTitles?: string[];
   onToggleCompare?: (title: string) => void;
   showCompare?: boolean;
+  showRank?: boolean;
 };
 
 export function PaperList({
@@ -17,6 +18,7 @@ export function PaperList({
   selectedTitles = [],
   onToggleCompare,
   showCompare = true,
+  showRank = false,
 }: PaperListProps) {
   const [expandedCredibilityTitle, setExpandedCredibilityTitle] = useState<
     string | null
@@ -28,29 +30,33 @@ export function PaperList({
         const isSelectedForComparison = selectedTitles.includes(source.title);
         const isCredibilityExpanded =
           expandedCredibilityTitle === source.title;
+        const paperKey = source.id
+          ? `${source.id}-${index}`
+          : `${source.title}-${source.year}-${index}`;
 
         return (
           <article
-            className="rounded-[8px] border border-black/10 bg-white/80 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
-            key={source.title}
+            className="animate-card rounded-[8px] border border-black/10 bg-white/85 p-6 shadow-sm transition hover:-translate-y-1 hover:border-[#9f8ee8]/35 hover:shadow-xl hover:shadow-black/5"
+            key={paperKey}
             style={{ animationDelay: `${index * 90}ms` }}
           >
-            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="mb-3 text-sm font-medium text-black/45">
+            <div className="mb-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_190px] md:items-start">
+              <div className="min-w-0">
+                <p className="mb-3 text-sm font-semibold text-black/45">
+                  {showRank ? `#${index + 1} ranked source · ` : ""}
                   {source.type} · {source.year} · {source.venue}
                 </p>
-                <h2 className="text-2xl font-semibold tracking-tight">
+                <h2 className="text-2xl font-semibold tracking-tight text-balance">
                   {source.title}
                 </h2>
                 <p className="mt-2 text-sm text-black/50">{source.authors}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <div className="inline-flex h-10 items-center rounded-full border border-[#446b70]/20 bg-[#edf4f5] px-4 text-sm font-medium text-[#446b70]">
-                  Credibility {source.credibility}/100
+              <div className="grid gap-2">
+                <div className="flex h-10 w-full items-center justify-center rounded-full border border-[#83aee0]/30 bg-[#eef6ff] px-4 text-sm font-semibold text-[#57718f]">
+                  Credibility {source.credibility.score}/100
                 </div>
                 <a
-                  className="inline-flex h-10 items-center rounded-full border border-black/10 bg-white px-4 text-sm font-medium transition hover:bg-[#f7f5f0]"
+                  className="flex h-10 w-full items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold transition hover:bg-[#f2f7fb]"
                   href={source.url}
                   rel="noreferrer"
                   target="_blank"
@@ -59,9 +65,9 @@ export function PaperList({
                 </a>
                 {showCompare && onToggleCompare ? (
                   <button
-                    className={`h-10 rounded-full px-4 text-sm font-medium transition ${
+                    className={`h-10 w-full rounded-full px-4 text-sm font-semibold transition ${
                       isSelectedForComparison
-                        ? "bg-[#446b70] text-white"
+                        ? "bg-[#6b5fa5] text-white"
                         : "border border-black/10 bg-white text-black/65 hover:text-black"
                     }`}
                     onClick={() => onToggleCompare(source.title)}
@@ -80,15 +86,12 @@ export function PaperList({
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <Metric label="Relevance" value={`${source.relevance}%`} />
               <Metric label="Citations" value={source.citations} />
-              <Metric
-                label="Source type"
-                value={source.credibilityBreakdown.methodology}
-              />
+              <Metric label="Source type" value={source.type} />
             </div>
 
             <div className="mt-5 border-t border-black/10 pt-5">
               <button
-                className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium transition hover:bg-[#f7f5f0]"
+                className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-[#f2f7fb]"
                 onClick={() =>
                   setExpandedCredibilityTitle(
                     isCredibilityExpanded ? null : source.title,
@@ -96,39 +99,41 @@ export function PaperList({
                 }
                 type="button"
               >
-                {isCredibilityExpanded ? "Hide credibility" : "Why trust this?"}
+                {isCredibilityExpanded
+                  ? "Hide credibility"
+                  : "Credibility signal"}
               </button>
 
               {isCredibilityExpanded ? (
-                <div className="mt-4 rounded-[8px] border border-black/10 bg-white/60 p-5 backdrop-blur">
+                <div className="mt-4 rounded-[8px] border border-black/10 bg-[#f2f7fb] p-5">
                   <h4 className="font-semibold tracking-tight">
-                    Credibility explanation
+                    Credibility signal
                   </h4>
 
                   <p className="mt-3 text-sm leading-6 text-black/60">
-                    {source.credibilityBreakdown.whyTrust}
+                    {source.credibility.whyTrust}
                   </p>
 
                   <div className="mt-5 grid gap-3 text-sm text-black/65">
                     <p>
                       <strong className="text-black">Citation strength:</strong>{" "}
-                      {source.credibilityBreakdown.citationStrength}
+                      {source.credibility.citationStrength}
                     </p>
                     <p>
                       <strong className="text-black">Recency:</strong>{" "}
-                      {source.credibilityBreakdown.recency}
+                      {source.credibility.recency}
                     </p>
                     <p>
                       <strong className="text-black">Methodology:</strong>{" "}
-                      {source.credibilityBreakdown.methodology}
+                      {source.credibility.methodology}
                     </p>
                     <p>
                       <strong className="text-black">Venue quality:</strong>{" "}
-                      {source.credibilityBreakdown.venueQuality}
+                      {source.credibility.venueQuality}
                     </p>
                     <p>
                       <strong className="text-black">Limitations:</strong>{" "}
-                      {source.credibilityBreakdown.limitations}
+                      {source.credibility.limitations}
                     </p>
                   </div>
                 </div>
@@ -149,8 +154,8 @@ function Metric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-[8px] bg-[#f7f5f0] px-4 py-3">
-      <p className="text-xs font-medium uppercase tracking-[0.14em] text-black/40">
+    <div className="rounded-[8px] border border-black/5 bg-[#f2f7fb] px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40">
         {label}
       </p>
       <p className="mt-2 text-lg font-semibold">{value}</p>

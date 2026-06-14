@@ -1,86 +1,83 @@
+import type { ResearchResult } from "@/types/research";
+
 export const mockResearch = {
   topic: "AI in Software Engineering",
 
-  themes: [
-    "Productivity",
-    "Code Quality",
-    "Developer Learning",
-    "Security",
-  ],
-
-  landscape: [
-    {
-      name: "Productivity gains",
-      explanation:
-        "Research here asks whether AI coding tools genuinely improve output or simply move effort into prompting, debugging, and review.",
-      debateStatus: "mixed evidence",
-      paperTitles: [
-        "The Impact of Generative AI on Developers",
-        "Measuring Developer Productivity with AI Coding Assistants",
-        "AI-Assisted Debugging in Professional Engineering Workflows",
-      ],
-      debateQuestions: [
-        "Does AI make developers faster or simply shift where effort happens?",
-      ],
-    },
-    {
-      name: "Code quality concerns",
-      explanation:
-        "This area focuses on maintainability, review depth, hidden defects, and whether faster code creation leads to better software.",
-      debateStatus: "mixed evidence",
-      paperTitles: [
-        "AI Pair Programming and Code Review Quality",
-        "Code Maintainability After AI-Assisted Development",
-        "Security Risks in AI-Generated Code",
-      ],
-      debateQuestions: [
-        "Can generated code be trusted without changing review practices?",
-      ],
-    },
-    {
-      name: "Developer learning",
-      explanation:
-        "Studies in this theme examine whether AI support helps novice programmers learn or reduces necessary conceptual struggle.",
-      debateStatus: "emerging",
-      paperTitles: [
-        "Novice Programmers and Generative AI Support",
-        "Generative AI Tools in Computing Education",
-        "The Impact of Generative AI on Developers",
-      ],
-      debateQuestions: [
-        "Will AI improve learning or weaken foundational programming skills?",
-      ],
-    },
-    {
-      name: "Security risks",
-      explanation:
-        "This theme looks at vulnerabilities, unsafe suggestions, and how much developers should trust generated code.",
-      debateStatus: "mostly agreed",
-      paperTitles: [
-        "Security Risks in AI-Generated Code",
-        "Automation Bias in Software Development Teams",
-        "Developer Trust in AI Code Recommendations",
-      ],
-      debateQuestions: [
-        "Can generated code be trusted without changing review practices?",
-      ],
-    },
-    {
-      name: "Team collaboration",
-      explanation:
-        "This theme explores how AI coding tools affect communication, shared ownership, trust, and review practices inside teams.",
-      debateStatus: "emerging",
-      paperTitles: [
-        "AI Pair Programming and Code Review Quality",
-        "Automation Bias in Software Development Teams",
-        "Developer Trust in AI Code Recommendations",
-      ],
-      debateQuestions: [
-        "Does AI make developers faster or simply shift where effort happens?",
-        "Can generated code be trusted without changing review practices?",
-      ],
-    },
-  ],
+  researchMap: {
+    themes: [
+      {
+        name: "Productivity gains",
+        explanation:
+          "Research here asks whether AI coding tools genuinely improve output or simply move effort into prompting, debugging, and review.",
+        debateStatus: "mixed evidence",
+        paperTitles: [
+          "The Impact of Generative AI on Developers",
+          "Measuring Developer Productivity with AI Coding Assistants",
+          "AI-Assisted Debugging in Professional Engineering Workflows",
+        ],
+        debateQuestions: [
+          "Does AI make developers faster or simply shift where effort happens?",
+        ],
+      },
+      {
+        name: "Code quality concerns",
+        explanation:
+          "This area focuses on maintainability, review depth, hidden defects, and whether faster code creation leads to better software.",
+        debateStatus: "mixed evidence",
+        paperTitles: [
+          "AI Pair Programming and Code Review Quality",
+          "Code Maintainability After AI-Assisted Development",
+          "Security Risks in AI-Generated Code",
+        ],
+        debateQuestions: [
+          "Can generated code be trusted without changing review practices?",
+        ],
+      },
+      {
+        name: "Developer learning",
+        explanation:
+          "Studies in this theme examine whether AI support helps novice programmers learn or reduces necessary conceptual struggle.",
+        debateStatus: "emerging",
+        paperTitles: [
+          "Novice Programmers and Generative AI Support",
+          "Generative AI Tools in Computing Education",
+          "The Impact of Generative AI on Developers",
+        ],
+        debateQuestions: [
+          "Will AI improve learning or weaken foundational programming skills?",
+        ],
+      },
+      {
+        name: "Security risks",
+        explanation:
+          "This theme looks at vulnerabilities, unsafe suggestions, and how much developers should trust generated code.",
+        debateStatus: "mostly agreed",
+        paperTitles: [
+          "Security Risks in AI-Generated Code",
+          "Automation Bias in Software Development Teams",
+          "Developer Trust in AI Code Recommendations",
+        ],
+        debateQuestions: [
+          "Can generated code be trusted without changing review practices?",
+        ],
+      },
+      {
+        name: "Team collaboration",
+        explanation:
+          "This theme explores how AI coding tools affect communication, shared ownership, trust, and review practices inside teams.",
+        debateStatus: "emerging",
+        paperTitles: [
+          "AI Pair Programming and Code Review Quality",
+          "Automation Bias in Software Development Teams",
+          "Developer Trust in AI Code Recommendations",
+        ],
+        debateQuestions: [
+          "Does AI make developers faster or simply shift where effort happens?",
+          "Can generated code be trusted without changing review practices?",
+        ],
+      },
+    ],
+  },
 
   debates: [
     {
@@ -132,20 +129,20 @@ export const mockResearch = {
     },
   ],
 
-  sources: [
+  papers: [
     {
       title: "The Impact of Generative AI on Developers",
       year: 2025,
       authors: "Mock et al.",
       venue: "Journal of Software Research",
-      credibility: 92,
       relevance: 96,
       citations: 184,
       type: "Empirical study",
       url: "https://scholar.google.com/scholar?q=The+Impact+of+Generative+AI+on+Developers",
       whyItMatters:
         "Useful for understanding how AI tools change developer speed, review habits, and confidence.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 92,
         citationStrength: "High",
         recency: "Recent",
         methodology: "Empirical developer study",
@@ -160,14 +157,14 @@ export const mockResearch = {
       year: 2024,
       authors: "Chen and Alvarez",
       venue: "Software Engineering Notes",
-      credibility: 88,
       relevance: 91,
       citations: 96,
       type: "Mixed-methods paper",
       url: "https://scholar.google.com/scholar?q=AI+Pair+Programming+and+Code+Review+Quality",
       whyItMatters:
         "Helps compare productivity gains with risks around maintainability and review depth.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 88,
         citationStrength: "Moderate",
         recency: "Recent",
         methodology: "Mixed-methods study",
@@ -182,14 +179,14 @@ export const mockResearch = {
       year: 2023,
       authors: "Rahman et al.",
       venue: "ACM Computing Surveys",
-      credibility: 94,
       relevance: 87,
       citations: 312,
       type: "Survey paper",
       url: "https://scholar.google.com/scholar?q=Security+Risks+in+AI-Generated+Code",
       whyItMatters:
         "Strong for understanding the limitations and risks of relying on generated code.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 94,
         citationStrength: "High",
         recency: "Recent",
         methodology: "Survey of security evidence",
@@ -204,14 +201,14 @@ export const mockResearch = {
       year: 2025,
       authors: "Singh and Patel",
       venue: "IEEE Software",
-      credibility: 86,
       relevance: 89,
       citations: 74,
       type: "Quantitative study",
       url: "https://scholar.google.com/scholar?q=Measuring+Developer+Productivity+with+AI+Coding+Assistants",
       whyItMatters:
         "Useful for questioning how productivity is measured when AI changes planning, coding, and review work.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 86,
         citationStrength: "Moderate",
         recency: "Very recent",
         methodology: "Quantitative productivity study",
@@ -226,14 +223,14 @@ export const mockResearch = {
       year: 2024,
       authors: "Williams et al.",
       venue: "Computers & Education",
-      credibility: 90,
       relevance: 84,
       citations: 143,
       type: "Education study",
       url: "https://scholar.google.com/scholar?q=Novice+Programmers+and+Generative+AI+Support",
       whyItMatters:
         "Good for exploring whether AI support helps beginners learn concepts or bypass important struggle.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 90,
         citationStrength: "High",
         recency: "Recent",
         methodology: "Education-focused study",
@@ -248,14 +245,14 @@ export const mockResearch = {
       year: 2022,
       authors: "Kumar and Ellis",
       venue: "Human Factors in Computing Systems",
-      credibility: 91,
       relevance: 82,
       citations: 267,
       type: "Human factors paper",
       url: "https://scholar.google.com/scholar?q=Automation+Bias+in+Software+Development+Teams",
       whyItMatters:
         "Helps explain why developers may over-trust AI suggestions even when errors are present.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 91,
         citationStrength: "High",
         recency: "Slightly older but still relevant",
         methodology: "Human factors study",
@@ -270,14 +267,14 @@ export const mockResearch = {
       year: 2025,
       authors: "Morgan and Ito",
       venue: "Empirical Software Engineering",
-      credibility: 87,
       relevance: 80,
       citations: 41,
       type: "Field study",
       url: "https://scholar.google.com/scholar?q=AI-Assisted+Debugging+in+Professional+Engineering+Workflows",
       whyItMatters:
         "Adds detail on how AI tools affect debugging, not only code generation.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 87,
         citationStrength: "Emerging",
         recency: "Very recent",
         methodology: "Field study",
@@ -292,14 +289,14 @@ export const mockResearch = {
       year: 2023,
       authors: "Garcia et al.",
       venue: "Journal of Systems and Software",
-      credibility: 89,
       relevance: 79,
       citations: 118,
       type: "Repository analysis",
       url: "https://scholar.google.com/scholar?q=Code+Maintainability+After+AI-Assisted+Development",
       whyItMatters:
         "Important for comparing short-term speed against longer-term maintenance costs.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 89,
         citationStrength: "Moderate",
         recency: "Recent",
         methodology: "Repository analysis",
@@ -314,14 +311,14 @@ export const mockResearch = {
       year: 2024,
       authors: "O'Neill and Park",
       venue: "ACM Transactions on Software Engineering",
-      credibility: 85,
       relevance: 77,
       citations: 68,
       type: "Interview study",
       url: "https://scholar.google.com/scholar?q=Developer+Trust+in+AI+Code+Recommendations",
       whyItMatters:
         "Useful for understanding how developers decide when to accept, reject, or modify AI suggestions.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 85,
         citationStrength: "Moderate",
         recency: "Recent",
         methodology: "Interview study",
@@ -336,14 +333,14 @@ export const mockResearch = {
       year: 2023,
       authors: "Hassan and Miller",
       venue: "International Computing Education Research",
-      credibility: 88,
       relevance: 75,
       citations: 205,
       type: "Literature review",
       url: "https://scholar.google.com/scholar?q=Generative+AI+Tools+in+Computing+Education",
       whyItMatters:
         "A helpful background source for education-focused dissertations.",
-      credibilityBreakdown: {
+      credibility: {
+        score: 88,
         citationStrength: "High",
         recency: "Recent",
         methodology: "Literature review",
@@ -355,26 +352,40 @@ export const mockResearch = {
     },
   ],
 
-  comparison: {
-    agreement:
-      "Both papers argue that AI tools change developer workflows, but they define the value of that change differently.",
-    disagreement:
-      "One paper focuses on productivity and confidence, while the other asks whether faster work also improves review quality and maintainability.",
-    methodDifference:
-      "Compare the evidence type carefully: survey or field data can show developer experience, while review or repository analysis can reveal quality risks.",
-    dissertationUse:
-      "Use one paper to frame the promise of AI-assisted development and the other to introduce a more critical counterpoint.",
+  comparisons: {
+    default: {
+      agreement:
+        "Both papers argue that AI tools change developer workflows, but they define the value of that change differently.",
+      disagreement:
+        "One paper focuses on productivity and confidence, while the other asks whether faster work also improves review quality and maintainability.",
+      methodDifference:
+        "Compare the evidence type carefully: survey or field data can show developer experience, while review or repository analysis can reveal quality risks.",
+      dissertationUse:
+        "Use one paper to frame the promise of AI-assisted development and the other to introduce a more critical counterpoint.",
+    },
   },
 
   readingPath: [
-    "Start Here",
-    "Build Context",
-    "Understand Debate",
-    "Advanced Reading",
+    {
+      label: "Start Here",
+      purpose: "Read broad orientation sources before narrowing the argument.",
+    },
+    {
+      label: "Build Context",
+      purpose: "Use empirical and survey papers to understand the field.",
+    },
+    {
+      label: "Understand Debate",
+      purpose: "Compare papers that disagree on productivity, quality, or trust.",
+    },
+    {
+      label: "Advanced Reading",
+      purpose: "Move into specialist studies once your research angle is clear.",
+    },
   ],
 
   reflectionQuestions: [
     "What assumptions are being made?",
     "Which papers disagree?",
   ],
-};
+} satisfies ResearchResult;

@@ -1,18 +1,14 @@
-type Source = {
-  title: string;
-  year: number;
-  credibility: number;
-};
+import type { ResearchPaper } from "@/types/research";
 
 type SourceCardsProps = {
-  sources: Source[];
+  sources: ResearchPaper[];
 };
 
 export function SourceCards({ sources }: SourceCardsProps) {
   return (
     <section className="mx-auto max-w-5xl px-6 py-10 sm:px-10">
       <div className="mb-8">
-        <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#446b70]">
+        <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#57718f]">
           Step 3
         </p>
         <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">
@@ -36,12 +32,12 @@ export function SourceCards({ sources }: SourceCardsProps) {
               Best used for understanding how AI tools are changing developer
               workflows and research questions.
             </p>
-            <div className="mt-6 flex items-center justify-between rounded-[8px] bg-[#eef5f2] px-4 py-3">
-              <span className="text-sm font-medium text-[#355c48]">
+            <div className="mt-6 flex items-center justify-between rounded-[8px] bg-[#ecf7f0] px-4 py-3">
+              <span className="text-sm font-medium text-[#4f7b61]">
                 Credibility
               </span>
-              <span className="text-sm font-semibold text-[#355c48]">
-                {source.credibility}/100
+              <span className="text-sm font-semibold text-[#4f7b61]">
+                {source.credibility.score}/100
               </span>
             </div>
           </article>

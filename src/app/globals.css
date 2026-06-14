@@ -1,37 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #eef7f5;
   --foreground: #171717;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background:
+    linear-gradient(120deg, rgba(211, 235, 247, 0.95) 0%, rgba(237, 225, 249, 0.82) 48%, rgba(218, 244, 224, 0.9) 100%),
+    linear-gradient(35deg, rgba(255, 255, 255, 0.6), rgba(208, 229, 255, 0.35));
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
 }
 
 html {
+  font-size: 90%;
   scroll-behavior: smooth;
 }
 
 ::selection {
-  background: #cfe4e6;
+  background: #d9d6ff;
   color: #111111;
+}
+
+.aura-bg {
+  background:
+    linear-gradient(135deg, rgba(212, 236, 248, 0.94) 0%, rgba(236, 226, 250, 0.86) 46%, rgba(218, 246, 226, 0.94) 100%),
+    linear-gradient(55deg, rgba(255, 255, 255, 0.55), rgba(198, 230, 220, 0.3));
+  background-size: 180% 180%, 100% 100%;
+  animation: auraShift 16s ease-in-out infinite alternate;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #9f8ee8;
+  outline-offset: 3px;
 }
 
 @keyframes fadeIn {
@@ -45,5 +64,214 @@ html {
     opacity: 1;
     transform: translateY(0);
     filter: blur(0);
+  }
+}
+
+@keyframes auraShift {
+  from {
+    background-position: 0% 50%, center;
+  }
+
+  to {
+    background-position: 100% 50%, center;
+  }
+}
+
+@keyframes letterReveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em) rotateX(45deg);
+    filter: blur(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes softFloat {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes progressGrow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes typeDemo {
+  from {
+    max-width: 0;
+  }
+
+  to {
+    max-width: calc(var(--typing-characters) * 1ch);
+  }
+}
+
+@keyframes caretBlink {
+  0%,
+  45% {
+    border-color: #57718f;
+  }
+
+  46%,
+  100% {
+    border-color: transparent;
+  }
+}
+
+@keyframes buttonClick {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  38% {
+    transform: translateY(1px) scale(0.96);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  72% {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 14px 28px rgba(107, 95, 165, 0.24);
+  }
+}
+
+@keyframes demoStepIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes slideSidebarIn {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.letter-reveal {
+  animation: letterReveal 720ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  display: inline-block;
+  transform-origin: bottom center;
+  will-change: transform, opacity, filter;
+}
+
+.animate-rise {
+  animation: riseIn 760ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.animate-card {
+  animation: cardIn 720ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.animate-soft-float {
+  animation: softFloat 4s ease-in-out 1.2s infinite alternate;
+}
+
+.animate-preview-panel {
+  animation:
+    cardIn 720ms cubic-bezier(0.2, 0.8, 0.2, 1) 2.35s both,
+    softFloat 4s ease-in-out 3.3s infinite alternate;
+}
+
+.animate-progress {
+  animation: progressGrow 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: left;
+}
+
+.typing-demo {
+  animation:
+    typeDemo 1.85s steps(var(--typing-characters)) 3.25s both,
+    caretBlink 720ms steps(1) 3.05s 5;
+  border-right: 2px solid #57718f;
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.demo-click-button {
+  animation: buttonClick 900ms ease-in-out 5.15s both;
+}
+
+.demo-step-map {
+  animation: demoStepIn 680ms cubic-bezier(0.2, 0.8, 0.2, 1) 6s both;
+}
+
+.demo-step-papers {
+  animation: demoStepIn 680ms cubic-bezier(0.2, 0.8, 0.2, 1) 7.1s both;
+}
+
+.demo-step-debate {
+  animation: demoStepIn 680ms cubic-bezier(0.2, 0.8, 0.2, 1) 8.2s both;
+}
+
+.demo-step-item {
+  animation: demoStepIn 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
   }
 }

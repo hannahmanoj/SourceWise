@@ -1,21 +1,47 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import Link from "next/link";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { PaperList } from "@/components/PaperList";
 import { mockResearch } from "@/data/mockResearch";
+import type {
+  AcademicLevel,
+  PaperComparison,
+  ResearchPaper,
+  ResearchResult,
+  ResearchTheme,
+} from "@/types/research";
 
 type Stage = "start" | "loading" | "landscape" | "papers" | "debates";
-type Level = "Bachelor's" | "Master's" | "PhD";
-type LandscapeTheme = (typeof mockResearch.landscape)[number];
+type Level = AcademicLevel;
+type LandscapeTheme = ResearchTheme;
+type PaperSort = "relevance" | "citations" | "year";
 
 const levels: Level[] = ["Bachelor's", "Master's", "PhD"];
+const paperSortOptions: { label: string; value: PaperSort }[] = [
+  { label: "Relevance", value: "relevance" },
+  { label: "Citations", value: "citations" },
+  { label: "Release year", value: "year" },
+];
 
-export function ResearchExperience() {
-  const [topic, setTopic] = useState(mockResearch.topic);
-  const [level, setLevel] = useState<Level>("Bachelor's");
-  const [stage, setStage] = useState<Stage>("start");
+export function ResearchExperience({
+  initialLevel = "Bachelor's",
+  initialResearchResult,
+  initialTopic = "",
+}: {
+  initialLevel?: Level;
+  initialResearchResult?: ResearchResult;
+  initialTopic?: string;
+}) {
+  const [researchResult, setResearchResult] =
+    useState<ResearchResult>(initialResearchResult ?? mockResearch);
+  const [topic, setTopic] = useState(initialTopic);
+  const [level, setLevel] = useState<Level>(initialLevel);
+  const [stage, setStage] = useState<Stage>(
+    initialResearchResult ? "landscape" : "start",
+  );
+  const [error, setError] = useState<string | null>(null);
   const [comparisonTitles, setComparisonTitles] = useState<string[]>([]);
+  const [paperSort, setPaperSort] = useState<PaperSort>("relevance");
   const [selectedTheme, setSelectedTheme] = useState<LandscapeTheme | null>(
     null,
   );
@@ -24,36 +50,105 @@ export function ResearchExperience() {
     () =>
       comparisonTitles
         .map((title) =>
-          mockResearch.sources.find((source) => source.title === title),
+          researchResult.papers.find((source) => source.title === title),
         )
         .filter((source) => source !== undefined),
-    [comparisonTitles],
+    [comparisonTitles, researchResult.papers],
+  );
+
+  const sortedPapers = useMemo(
+    () => sortPapers(researchResult.papers, paperSort),
+    [paperSort, researchResult.papers],
   );
 
   const displayedPapers = useMemo(() => {
     if (!selectedTheme) {
-      return mockResearch.sources.slice(0, 5);
+      return sortedPapers;
     }
 
-    return selectedTheme.paperTitles
+    const themePapers = selectedTheme.paperTitles
       .map((title) =>
-        mockResearch.sources.find((source) => source.title === title),
+        researchResult.papers.find((source) => source.title === title),
       )
       .filter((source) => source !== undefined);
-  }, [selectedTheme]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    return sortPapers(themePapers, paperSort);
+  }, [paperSort, researchResult.papers, selectedTheme, sortedPapers]);
+
+  const showResultNavigation =
+    stage === "landscape" || stage === "papers" || stage === "debates";
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const trimmedTopic = topic.trim();
+
+    if (!trimmedTopic) {
+      return;
+    }
+
     setStage("loading");
+    setError(null);
     setSelectedTheme(null);
     setComparisonTitles([]);
-    window.setTimeout(() => setStage("landscape"), 900);
+    setPaperSort("relevance");
+
+    try {
+      const response = await fetch("/api/research", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          topic: trimmedTopic,
+          academicLevel: level,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+
+        throw new Error(errorPayload?.error ?? "Research request failed.");
+      }
+
+      const nextResearchResult = (await response.json()) as ResearchResult;
+
+      setResearchResult(nextResearchResult);
+      setTopic(nextResearchResult.topic);
+      setStage("landscape");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not map this topic yet. Please try again.",
+      );
+      setStage("start");
+    }
   }
 
   function openTheme(theme: LandscapeTheme) {
     setSelectedTheme(theme);
     setComparisonTitles([]);
     setStage("papers");
+  }
+
+  function openAllPapers() {
+    setSelectedTheme(null);
+    setComparisonTitles([]);
+    setStage("papers");
+  }
+
+  function openLandscape() {
+    setSelectedTheme(null);
+    setComparisonTitles([]);
+    setStage("landscape");
+  }
+
+  function openDebates() {
+    setSelectedTheme(null);
+    setComparisonTitles([]);
+    setStage("debates");
   }
 
   function toggleComparison(title: string) {
@@ -70,19 +165,32 @@ export function ResearchExperience() {
     });
   }
 
+  function changePaperSort(nextSort: PaperSort) {
+    setPaperSort(nextSort);
+    setComparisonTitles([]);
+  }
+
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
-      <section className="rounded-[8px] border border-black/10 bg-white/75 p-5 shadow-sm backdrop-blur sm:p-8">
-        <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-[#446b70]">
-          New research topic
-        </p>
+    <div className="mx-auto max-w-6xl px-6 py-8 sm:px-10">
+      <section className="animate-card rounded-[8px] border border-black/10 bg-white/80 p-5 shadow-lg shadow-black/[0.04] backdrop-blur sm:p-7">
+        <div className="mb-6">
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-[#57718f]">
+              New research topic
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Build a research path from a single question.
+            </h1>
+          </div>
+        </div>
+
         <form className="space-y-5" onSubmit={handleSubmit}>
           <label className="block">
             <span className="sr-only">Research topic</span>
             <input
-              className="h-16 w-full rounded-full border border-black/10 bg-[#f7f5f0] px-6 text-lg font-medium outline-none transition placeholder:text-black/35 focus:border-[#446b70] focus:bg-white focus:ring-4 focus:ring-[#cfe4e6]"
+              className="h-16 w-full rounded-[8px] border border-black/10 bg-[#f2f7fb] px-5 text-lg font-semibold outline-none transition placeholder:text-black/35 focus:border-[#6b5fa5] focus:bg-white focus:ring-4 focus:ring-[#ded9ff]"
               onChange={(event) => setTopic(event.target.value)}
-              placeholder="What are you writing about?"
+              placeholder="Enter a research topic, e.g. climate change adaptation"
               type="text"
               value={topic}
             />
@@ -90,10 +198,10 @@ export function ResearchExperience() {
 
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="mb-3 text-sm font-medium text-black/50">
+              <p className="mb-3 text-sm font-semibold text-black/50">
                 Choose your academic level
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="inline-flex flex-wrap gap-1 rounded-full border border-black/10 bg-[#f2f7fb] p-1">
                 {levels.map((item) => {
                   const isSelected = item === level;
 
@@ -102,7 +210,7 @@ export function ResearchExperience() {
                       className={`h-10 rounded-full px-5 text-sm font-medium transition ${
                         isSelected
                           ? "bg-[#171717] text-white"
-                          : "border border-black/10 bg-white text-black/65 hover:text-black"
+                          : "text-black/60 hover:bg-white hover:text-black"
                       }`}
                       key={item}
                       onClick={() => setLevel(item)}
@@ -116,37 +224,90 @@ export function ResearchExperience() {
             </div>
 
             <button
-              className="h-12 rounded-full bg-[#171717] px-8 text-sm font-medium text-white transition hover:scale-[1.02] hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-12 rounded-full bg-[#171717] px-8 text-sm font-semibold text-white shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-black disabled:cursor-not-allowed disabled:opacity-40"
               disabled={!topic.trim() || stage === "loading"}
               type="submit"
             >
-              {stage === "loading" ? "Finding papers" : "Go"}
+              {stage === "loading" ? "Mapping topic" : "Map topic"}
             </button>
           </div>
         </form>
+        {error ? (
+          <p className="mt-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {error}
+          </p>
+        ) : null}
       </section>
 
-      {stage === "start" ? (
-        <section className="grid gap-4 py-8 md:grid-cols-3">
-          {mockResearch.themes.slice(0, 3).map((theme) => (
-            <div
-              className="rounded-[8px] border border-black/10 bg-white/45 p-5 text-black/55"
-              key={theme}
-            >
-              <p className="text-sm font-medium">Preview</p>
-              <p className="mt-8 text-xl font-semibold text-black">{theme}</p>
+      {showResultNavigation ? (
+        <nav
+          aria-label="Research result navigation"
+          className="animate-card mt-5 rounded-[8px] border border-black/10 bg-white/75 p-3 shadow-sm backdrop-blur"
+        >
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+            <div className="px-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#57718f]">
+                Research view
+              </p>
+              <p className="mt-1 text-sm font-semibold text-black/55">
+                {selectedTheme && stage === "papers"
+                  ? `Theme: ${selectedTheme.name}`
+                  : stage === "papers"
+                    ? "All papers"
+                    : stage === "debates"
+                      ? "Debates"
+                      : "Topic map"}
+              </p>
             </div>
-          ))}
-        </section>
+            <div className="grid grid-cols-3 gap-2 rounded-full bg-[#f2f7fb] p-1 text-sm font-semibold">
+              <button
+                aria-current={stage === "landscape" ? "page" : undefined}
+                className={`h-11 rounded-full px-4 transition ${
+                  stage === "landscape"
+                    ? "bg-[#171717] text-white shadow-sm"
+                    : "text-black/58 hover:bg-white hover:text-black"
+                }`}
+                onClick={openLandscape}
+                type="button"
+              >
+                Map
+              </button>
+              <button
+                aria-current={stage === "papers" && !selectedTheme ? "page" : undefined}
+                className={`h-11 rounded-full px-4 transition ${
+                  stage === "papers" && !selectedTheme
+                    ? "bg-[#171717] text-white shadow-sm"
+                    : "text-black/58 hover:bg-white hover:text-black"
+                }`}
+                onClick={openAllPapers}
+                type="button"
+              >
+                Papers
+              </button>
+              <button
+                aria-current={stage === "debates" ? "page" : undefined}
+                className={`h-11 rounded-full px-4 transition ${
+                  stage === "debates"
+                    ? "bg-[#171717] text-white shadow-sm"
+                    : "text-black/58 hover:bg-white hover:text-black"
+                }`}
+                onClick={openDebates}
+                type="button"
+              >
+                Debates
+              </button>
+            </div>
+          </div>
+        </nav>
       ) : null}
 
       {stage === "loading" ? (
         <section className="py-16">
-          <div className="mx-auto max-w-2xl text-center">
+          <div className="animate-rise mx-auto max-w-2xl text-center">
             <div className="mx-auto mb-8 h-2 overflow-hidden rounded-full bg-black/10">
-              <div className="h-full w-2/3 animate-[pulse_1s_ease-in-out_infinite] rounded-full bg-[#9fc5c9]" />
+              <div className="h-full w-2/3 animate-[pulse_1s_ease-in-out_infinite] rounded-full bg-[#83aee0]" />
             </div>
-            <h2 className="text-4xl font-semibold tracking-tight">
+            <h2 className="text-4xl font-semibold tracking-tight text-balance">
               Mapping the research landscape.
             </h2>
             <p className="mt-4 text-lg leading-8 text-black/55">
@@ -161,10 +322,10 @@ export function ResearchExperience() {
         <section className="animate-[fadeIn_600ms_ease-out] py-10">
           <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#446b70]">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#57718f]">
                 Research landscape
               </p>
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-6xl">
+              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
                 First, understand the shape of {topic}.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-black/60">
@@ -172,25 +333,26 @@ export function ResearchExperience() {
                 so you know what each source is helping you understand.
               </p>
             </div>
-            <div className="rounded-full border border-black/10 bg-white/70 px-5 py-3 text-sm font-medium text-black/60">
+            <div className="rounded-full border border-black/10 bg-white/70 px-5 py-3 text-sm font-semibold text-black/60">
               {level} level
             </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
-            <div className="rounded-[8px] border border-black/10 bg-[#171717] p-6 text-white shadow-sm">
-              <p className="mb-5 text-sm font-medium uppercase tracking-[0.18em] text-white/45">
+            <div className="animate-card rounded-[8px] border border-black/10 bg-[#171717] p-6 text-white shadow-xl shadow-black/[0.08]">
+              <p className="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/45">
                 Topic map
               </p>
               <h2 className="text-2xl font-semibold tracking-tight">
                 {topic}
               </h2>
               <div className="mt-6 space-y-3 border-l border-white/15 pl-4">
-                {mockResearch.landscape.map((theme) => (
+                {researchResult.researchMap.themes.map((theme, index) => (
                   <button
-                    className="block w-full rounded-[8px] border border-white/10 bg-white/[0.06] px-4 py-3 text-left text-sm font-medium text-white/78 transition hover:bg-white/[0.12]"
+                    className="animate-card block w-full rounded-[8px] border border-white/10 bg-white/[0.06] px-4 py-3 text-left text-sm font-semibold text-white/80 transition hover:bg-white/[0.12]"
                     key={theme.name}
                     onClick={() => openTheme(theme)}
+                    style={{ animationDelay: `${index * 70}ms` }}
                     type="button"
                   >
                     {theme.name}
@@ -200,18 +362,19 @@ export function ResearchExperience() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              {mockResearch.landscape.map((theme) => (
+              {researchResult.researchMap.themes.map((theme, index) => (
                 <button
-                  className="rounded-[8px] border border-black/10 bg-white/80 p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
+                  className="animate-card rounded-[8px] border border-black/10 bg-white/80 p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-[#9f8ee8]/40 hover:shadow-xl hover:shadow-black/5"
                   key={theme.name}
                   onClick={() => openTheme(theme)}
+                  style={{ animationDelay: `${120 + index * 90}ms` }}
                   type="button"
                 >
                   <div className="mb-5 flex items-start justify-between gap-3">
                     <h2 className="text-2xl font-semibold tracking-tight">
                       {theme.name}
                     </h2>
-                    <span className="shrink-0 rounded-full bg-[#edf4f5] px-3 py-1 text-xs font-medium text-[#446b70]">
+                    <span className="shrink-0 rounded-full bg-[#e9f0ff] px-3 py-1 text-xs font-semibold text-[#6b5fa5]">
                       {theme.debateStatus}
                     </span>
                   </div>
@@ -219,10 +382,10 @@ export function ResearchExperience() {
                     {theme.explanation}
                   </p>
                   <div className="mt-6 flex items-center justify-between border-t border-black/10 pt-4 text-sm">
-                    <span className="font-medium text-black/55">
+                    <span className="font-semibold text-black/55">
                       {theme.paperTitles.length} related papers
                     </span>
-                    <span className="font-medium text-[#446b70]">
+                    <span className="font-semibold text-[#57718f]">
                       View theme
                     </span>
                   </div>
@@ -231,12 +394,36 @@ export function ResearchExperience() {
             </div>
           </div>
 
-          <section className="mt-10 rounded-[8px] border border-black/10 bg-[#edf4f5] p-6">
+          <section className="animate-card mt-10 rounded-[8px] border border-black/10 bg-white/75 p-6 shadow-sm">
+            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+              <div>
+                <p className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-[#57718f]">
+                  Related papers
+                </p>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Ready to inspect the sources?
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-black/58">
+                  Open a separate ranked paper view with the most relevant and
+                  most cited sources for {topic}.
+                </p>
+              </div>
+              <button
+                className="h-12 rounded-full bg-[#171717] px-6 text-sm font-semibold text-white shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-black"
+                onClick={openAllPapers}
+                type="button"
+              >
+                View all {sortedPapers.length} papers
+              </button>
+            </div>
+          </section>
+
+          <section className="animate-card mt-10 rounded-[8px] border border-black/10 bg-[#ecf7f0] p-6">
             <div className="mb-6">
-              <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#446b70]">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#4f7b61]">
                 Major debates
               </p>
-              <h2 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">
+              <h2 className="max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
                 Then see where researchers disagree.
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-7 text-black/60">
@@ -246,12 +433,13 @@ export function ResearchExperience() {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
-              {mockResearch.debates.map((debate, index) => (
+              {researchResult.debates.map((debate, index) => (
                 <article
-                  className="rounded-[8px] border border-black/10 bg-white/75 p-5 shadow-sm"
+                  className="animate-card rounded-[8px] border border-black/10 bg-white/75 p-5 shadow-sm"
                   key={debate.question}
+                  style={{ animationDelay: `${index * 90}ms` }}
                 >
-                  <p className="mb-5 text-sm font-medium text-[#446b70]">
+                  <p className="mb-5 text-sm font-semibold text-[#4f7b61]">
                     Debate {index + 1}
                   </p>
                   <h3 className="text-lg font-semibold leading-7">
@@ -260,6 +448,23 @@ export function ResearchExperience() {
                   <p className="mt-4 text-sm leading-6 text-black/55">
                     {debate.explanation}
                   </p>
+                  {debate.sides && debate.sides.length > 0 ? (
+                    <div className="mt-5 space-y-2 border-t border-black/10 pt-4">
+                      {debate.sides.map((side) => (
+                        <div
+                          className="rounded-[8px] bg-[#f2f7fb] px-3 py-2"
+                          key={`${debate.question}-${side.stance}`}
+                        >
+                          <p className="text-xs font-semibold leading-5 text-black/60">
+                            {side.stance}
+                          </p>
+                          <p className="mt-1 text-xs text-black/40">
+                            {side.paperIds.length} linked papers
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </article>
               ))}
             </div>
@@ -267,14 +472,14 @@ export function ResearchExperience() {
         </section>
       ) : null}
 
-      {stage === "papers" || stage === "debates" ? (
+      {stage === "papers" ? (
         <section className="animate-[fadeIn_600ms_ease-out] py-10">
-          <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#446b70]">
+          <div className="mb-8">
+            <div className="max-w-3xl">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#57718f]">
                 {selectedTheme ? "Theme papers" : "Most relevant papers"}
               </p>
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-6xl">
+              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
                 {selectedTheme
                   ? selectedTheme.name
                   : `Strong sources for ${topic}`}
@@ -282,25 +487,34 @@ export function ResearchExperience() {
               <p className="mt-5 max-w-2xl text-lg leading-8 text-black/60">
                 {selectedTheme
                   ? selectedTheme.explanation
-                  : `Showing the top ${displayedPapers.length} strongest starting points. Open papers in a new tab, or select two for an AI-generated comparison.`}
+                  : `Showing ${displayedPapers.length} related papers ranked by relevance, citations, and recency. Open papers in a new tab, or select two for an AI-generated comparison.`}
               </p>
-            </div>
 
-            <div className="flex flex-wrap gap-2">
-              {selectedTheme ? (
-                <button
-                  className="h-11 rounded-full border border-black/10 bg-white/70 px-5 text-sm font-medium text-black/60 transition hover:bg-white"
-                  onClick={() => {
-                    setSelectedTheme(null);
-                    setStage("landscape");
-                  }}
-                  type="button"
-                >
-                  Back to landscape
-                </button>
-              ) : null}
-              <div className="inline-flex h-11 items-center rounded-full border border-black/10 bg-white/70 px-5 text-sm font-medium text-black/60">
-                {level} level
+              <div className="mt-6 flex w-fit max-w-full flex-wrap items-center gap-2 rounded-[8px] border border-black/10 bg-white/70 px-3 py-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-black/45">
+                  Sort by
+                </span>
+                <div className="inline-flex flex-wrap gap-1 rounded-full bg-[#f2f7fb] p-1">
+                  {paperSortOptions.map((option) => {
+                    const isSelected = option.value === paperSort;
+
+                    return (
+                      <button
+                        aria-pressed={isSelected}
+                        className={`h-9 rounded-full px-4 text-xs font-semibold transition ${
+                          isSelected
+                            ? "bg-[#171717] text-white"
+                            : "text-black/55 hover:bg-white hover:text-black"
+                        }`}
+                        key={option.value}
+                        onClick={() => changePaperSort(option.value)}
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -311,30 +525,13 @@ export function ResearchExperience() {
                 onToggleCompare={toggleComparison}
                 papers={displayedPapers}
                 selectedTitles={comparisonTitles}
+                showRank={!selectedTheme}
               />
 
-              {!selectedTheme ? (
-                <Link
-                  className="inline-flex h-12 items-center rounded-full border border-black/10 bg-white px-6 text-sm font-medium text-black transition hover:bg-[#f7f5f0]"
-                  href="/research/papers"
-                >
-                  Show more papers
-                </Link>
-              ) : null}
-
-              {stage === "papers" && !selectedTheme ? (
-                <button
-                  className="mt-4 h-12 rounded-full bg-[#446b70] px-7 text-sm font-medium text-white transition hover:scale-[1.02]"
-                  onClick={() => setStage("debates")}
-                  type="button"
-                >
-                  Continue to debates
-                </button>
-              ) : null}
             </div>
 
-            <aside className="h-fit rounded-[8px] border border-black/10 bg-[#171717] p-5 text-white shadow-sm">
-              <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-white/45">
+            <aside className="animate-card h-fit rounded-[8px] border border-black/10 bg-[#171717] p-5 text-white shadow-xl shadow-black/[0.08] lg:sticky lg:top-24">
+              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-white/45">
                 Compare papers
               </p>
               <p className="text-sm leading-6 text-white/55">
@@ -343,10 +540,10 @@ export function ResearchExperience() {
               </p>
               {comparisonPapers.length > 0 ? (
                 <div className="mt-4 space-y-2">
-                  {comparisonPapers.map((paper) => (
+                  {comparisonPapers.map((paper, index) => (
                     <button
-                      className="w-full rounded-[8px] border border-white/10 bg-white/[0.06] p-3 text-left text-xs font-medium leading-5 text-white/80 transition hover:bg-white/[0.1]"
-                      key={paper.title}
+                      className="w-full rounded-[8px] border border-white/10 bg-white/[0.06] p-3 text-left text-xs font-semibold leading-5 text-white/80 transition hover:bg-white/[0.1]"
+                      key={paper.id ?? `${paper.title}-${index}`}
                       onClick={() => toggleComparison(paper.title)}
                       type="button"
                     >
@@ -355,7 +552,11 @@ export function ResearchExperience() {
                   ))}
                 </div>
               ) : null}
-              <ComparisonPanel selectedPapers={comparisonPapers} />
+              <ComparisonPanel
+                comparison={researchResult.comparisons.default}
+                selectedPapers={comparisonPapers}
+                topic={topic}
+              />
             </aside>
           </div>
         </section>
@@ -364,20 +565,21 @@ export function ResearchExperience() {
       {stage === "debates" ? (
         <section className="animate-[fadeIn_600ms_ease-out] pb-24 pt-4">
           <div className="mb-8">
-            <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-[#446b70]">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#57718f]">
               Debates
             </p>
-            <h2 className="text-4xl font-semibold tracking-tight sm:text-6xl">
+            <h2 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
               Now understand the disagreements.
             </h2>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
-            {mockResearch.debates.map((debate, index) => (
+            {researchResult.debates.map((debate, index) => (
               <article
-                className="rounded-[8px] border border-black/10 bg-white/75 p-6 shadow-sm"
+                className="animate-card rounded-[8px] border border-black/10 bg-white/75 p-6 shadow-sm"
                 key={debate.question}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                <p className="mb-8 text-sm font-medium text-[#446b70]">
+                <p className="mb-8 text-sm font-semibold text-[#6b5fa5]">
                   Debate {index + 1}
                 </p>
                 <h3 className="text-xl font-semibold leading-8">
@@ -388,43 +590,70 @@ export function ResearchExperience() {
                 </p>
 
                 <div className="mt-6 space-y-3">
-                  {debate.papers.map((debatePaper) => {
-                    const source = mockResearch.sources.find(
-                      (paper) => paper.title === debatePaper.title,
-                    );
-
-                    if (!source) {
-                      return null;
-                    }
+                  {(debate.sides && debate.sides.length > 0
+                    ? debate.sides
+                    : debate.papers.map((debatePaper) => ({
+                        paperIds: [],
+                        stance: debatePaper.stance,
+                      }))
+                  ).map((side) => {
+                    const sidePapers =
+                      side.paperIds.length > 0
+                        ? side.paperIds
+                            .map((paperId) =>
+                              researchResult.papers.find(
+                                (paper) => paper.id === paperId,
+                              ),
+                            )
+                            .filter(
+                              (paper): paper is ResearchPaper => Boolean(paper),
+                            )
+                        : debate.papers
+                            .filter(
+                              (debatePaper) =>
+                                debatePaper.stance === side.stance,
+                            )
+                            .map((debatePaper) =>
+                              researchResult.papers.find(
+                                (paper) => paper.title === debatePaper.title,
+                              ),
+                            )
+                            .filter(
+                              (paper): paper is ResearchPaper => Boolean(paper),
+                            );
 
                     return (
                       <div
-                        className="rounded-[8px] border border-black/10 bg-[#f7f5f0] p-4"
-                        key={`${debate.question}-${source.title}`}
+                        className="rounded-[8px] border border-black/10 bg-[#f2f7fb] p-4"
+                        key={`${debate.question}-${side.stance}`}
                       >
-                        <div className="mb-3 flex items-start justify-between gap-3">
-                          <div>
-                            <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-[#446b70]">
-                              {debatePaper.stance}
-                            </p>
-                            <p className="text-sm font-semibold leading-6">
-                              {source.title}
-                            </p>
-                          </div>
-                          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-black/55">
-                            {source.relevance}%
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <a
-                            className="inline-flex h-9 items-center rounded-full border border-black/10 bg-white px-3 text-xs font-medium transition hover:bg-white/70"
-                            href={source.url}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            Open
-                          </a>
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#4f7b61]">
+                          {side.stance}
+                        </p>
+                        <div className="space-y-3">
+                          {sidePapers.map((source, paperIndex) => (
+                            <div
+                              className="rounded-[8px] bg-white p-3"
+                              key={`${side.stance}-${source.id ?? `${source.title}-${paperIndex}`}`}
+                            >
+                              <div className="mb-3 flex items-start justify-between gap-3">
+                                <p className="text-sm font-semibold leading-6">
+                                  {source.title}
+                                </p>
+                                <span className="rounded-full bg-[#f2f7fb] px-3 py-1 text-xs font-semibold text-black/55">
+                                  {source.relevance}%
+                                </span>
+                              </div>
+                              <a
+                                className="inline-flex h-9 items-center rounded-full border border-black/10 bg-white px-3 text-xs font-semibold transition hover:bg-[#f2f7fb]"
+                                href={source.url}
+                                rel="noreferrer"
+                                target="_blank"
+                              >
+                                Open
+                              </a>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     );
@@ -439,12 +668,107 @@ export function ResearchExperience() {
   );
 }
 
+function sortPapers(papers: ResearchPaper[], sortBy: PaperSort) {
+  return [...papers].sort((firstPaper, secondPaper) => {
+    if (sortBy === "citations") {
+      return (
+        secondPaper.citations - firstPaper.citations ||
+        secondPaper.relevance - firstPaper.relevance ||
+        secondPaper.year - firstPaper.year
+      );
+    }
+
+    if (sortBy === "year") {
+      return (
+        secondPaper.year - firstPaper.year ||
+        secondPaper.relevance - firstPaper.relevance ||
+        secondPaper.citations - firstPaper.citations
+      );
+    }
+
+    return (
+      secondPaper.relevance - firstPaper.relevance ||
+      secondPaper.citations - firstPaper.citations ||
+      secondPaper.year - firstPaper.year
+    );
+  });
+}
+
 function ComparisonPanel({
+  comparison,
   selectedPapers,
+  topic,
 }: {
-  selectedPapers: (typeof mockResearch.sources)[number][];
+  comparison: PaperComparison;
+  selectedPapers: ResearchPaper[];
+  topic: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [generatedComparison, setGeneratedComparison] =
+    useState<PaperComparison | null>(null);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
+  const [isGeneratingComparison, setIsGeneratingComparison] = useState(false);
+  const activeComparison = generatedComparison ?? comparison;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function generateComparison() {
+      setIsExpanded(false);
+      setGeneratedComparison(null);
+      setComparisonError(null);
+
+      if (selectedPapers.length !== 2) {
+        setIsGeneratingComparison(false);
+        return;
+      }
+
+      setIsGeneratingComparison(true);
+
+      try {
+        const response = await fetch("/api/compare", {
+          body: JSON.stringify({
+            papers: selectedPapers,
+            topic,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const errorPayload = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+
+          throw new Error(
+            errorPayload?.error ?? "Could not compare these papers yet.",
+          );
+        }
+
+        const nextComparison = (await response.json()) as PaperComparison;
+        setGeneratedComparison(nextComparison);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setComparisonError(
+          error instanceof Error
+            ? error.message
+            : "Could not compare these papers yet.",
+        );
+      } finally {
+        setIsGeneratingComparison(false);
+      }
+    }
+
+    generateComparison();
+
+    return () => controller.abort();
+  }, [selectedPapers, topic]);
 
   return (
     <section className="mt-4 border-t border-white/10 pt-4">
@@ -457,25 +781,37 @@ function ComparisonPanel({
           <div className="relative rounded-[8px] border border-white/15 bg-white/[0.08] p-4">
             <button
               aria-label="Expand AI comparison"
-              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white transition hover:bg-white/20"
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={isGeneratingComparison}
               onClick={() => setIsExpanded(true)}
               type="button"
             >
               ↗
             </button>
             <p className="mb-3 pr-10 text-xs font-medium uppercase tracking-[0.14em] text-[#b8d8dc]">
-              AI generated
+              {isGeneratingComparison ? "Generating" : "AI generated"}
             </p>
-            <p className="text-sm leading-6 text-white/72">
-              Both papers discuss AI-assisted development, but one is stronger
-              for productivity claims while the other questions quality and
-              review depth.
-            </p>
+            {isGeneratingComparison ? (
+              <p className="text-sm leading-6 text-white/55">
+                Comparing claims, evidence, and best use cases for these two
+                papers.
+              </p>
+            ) : (
+              <p className="text-sm leading-6 text-white/72">
+                {activeComparison.agreement}
+              </p>
+            )}
+            {comparisonError ? (
+              <p className="mt-3 rounded-[8px] border border-red-300/30 bg-red-400/10 p-3 text-xs leading-5 text-red-100">
+                {comparisonError}
+              </p>
+            ) : null}
           </div>
 
           {isExpanded ? (
             <ComparisonPopup
               onClose={() => setIsExpanded(false)}
+              comparison={activeComparison}
               selectedPapers={selectedPapers}
             />
           ) : null}
@@ -486,11 +822,13 @@ function ComparisonPanel({
 }
 
 function ComparisonPopup({
+  comparison,
   onClose,
   selectedPapers,
 }: {
+  comparison: PaperComparison;
   onClose: () => void;
-  selectedPapers: (typeof mockResearch.sources)[number][];
+  selectedPapers: ResearchPaper[];
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8 backdrop-blur-md">
@@ -516,19 +854,19 @@ function ComparisonPopup({
         <div className="grid gap-3 md:grid-cols-2">
           <ComparisonItem
             label="Where they agree"
-            text={mockResearch.comparison.agreement}
+            text={comparison.agreement}
           />
           <ComparisonItem
             label="Where they differ"
-            text={mockResearch.comparison.disagreement}
+            text={comparison.disagreement}
           />
           <ComparisonItem
             label="Method difference"
-            text={mockResearch.comparison.methodDifference}
+            text={comparison.methodDifference}
           />
           <ComparisonItem
             label="Best dissertation use"
-            text={mockResearch.comparison.dissertationUse}
+            text={comparison.dissertationUse}
           />
         </div>
 
